@@ -5,13 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login / Signup - Friends Trip Manager</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/common.js"></script>
 <script src="js/i18n.js"></script>
 </head>
-<body>
+<body class="auth-page">
 <div class="hero">
 <div class="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div>
 <h1 data-i18n="app_title">Friends Trip Manager</h1>
@@ -19,6 +23,7 @@
 </div>
 <div class="wrap auth-wrap">
 <div class="card">
+<h2 data-i18n="signin_title">Sign in to your account</h2>
 <p class="muted" data-i18n="login_desc">লগইন করুন অথবা নতুন অ্যাকাউন্ট খুলুন। সাইনআপের পর Manager / Member বেছে নিতে হবে।</p>
 <label for="email" data-i18n="email_label">ইমেইল</label>
 <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
@@ -30,6 +35,7 @@
 </div>
 <div id="msg"></div>
 </div>
+<p class="auth-footer">Bangladesh Taka (৳) · Asia/Dhaka timezone</p>
 </div>
 <script src="js/auth.js"></script>
 </body>
