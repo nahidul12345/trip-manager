@@ -3,30 +3,21 @@
 -- It creates profiles, trips, trip_members, trip_join_codes with RLS.
 -- Run it once. If you run it again, it will drop and recreate these tables,
 -- so only run it on a NEW project, not on a project with live data.
+--
+-- IMPORTANT ORDER (fixed 26 Oct 2026): tables FIRST, then the helper
+-- functions that query trip_members. The old version defined the helpers
+-- before the table existed, so Postgres failed with:
+--   ERROR 42P01: relation "public.trip_members" does not exist
+-- at the first helper function. This fixed version creates the tables
+-- first, so the helpers validate cleanly.
 
--- ---------- helpers (avoid RLS recursion) ----------
-create or replace function public.is_trip_member(p_trip_id uuid)
-returns boolean language sql security definer stable as $$
-  select exists (
-    select 1 from public.trip_members
-    where trip_id = p_trip_id and user_id = auth.uid() and status = 'active'
-  );
-$$;
-
-create or replace function public.is_trip_manager(p_trip_id uuid)
-returns boolean language sql security definer stable as $$
-  select exists (
-    select 1 from public.trip_members
-    where trip_id = p_trip_id and user_id = auth.uid() and role = 'manager' and status = 'active'
-  );
-$$;
-
--- ---------- profiles ----------
+-- ---------- drop old tables (clean start, new project only) ----------
 drop table if exists public.trip_join_codes cascade;
 drop table if exists public.trip_members cascade;
 drop table if exists public.trips cascade;
 drop table if exists public.profiles cascade;
 
+-- ---------- profiles ----------
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
@@ -83,6 +74,25 @@ create table public.trip_join_codes (
   is_active boolean default true,
   created_at timestamptz default now()
 );
+
+-- ---------- helpers (avoid RLS recursion) ----------
+-- These MUST come after trip_members exists, otherwise Postgres
+-- rejects them with 42P01 at creation time.
+create or replace function public.is_trip_member(p_trip_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists (
+    select 1 from public.trip_members
+    where trip_id = p_trip_id and user_id = auth.uid() and status = 'active'
+  );
+$$;
+
+create or replace function public.is_trip_manager(p_trip_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists (
+    select 1 from public.trip_members
+    where trip_id = p_trip_id and user_id = auth.uid() and role = 'manager' and status = 'active'
+  );
+$$;
 
 -- ---------- RLS ----------
 alter table public.profiles enable row level security;
