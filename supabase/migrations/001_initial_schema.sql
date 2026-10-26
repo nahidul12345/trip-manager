@@ -1,6 +1,10 @@
 -- ============================================================
 -- Migration: 001_initial_schema.sql
 -- Friends Trip Expense Manager
+-- IDEMPOTENT: safe to re-run. Tables use IF NOT EXISTS, policies and
+-- triggers are dropped (IF EXISTS) before being recreated, so a second
+-- run no longer fails with 42P07 (table exists) or 42710 (policy/trigger exists).
+-- Run in order: 001 -> 002 -> 003.
 -- ============================================================
 
 -- Enable UUID extension
@@ -9,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ─── Profiles ─────────────────────────────────────────────────────────────────
 
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -18,9 +22,11 @@ CREATE TABLE profiles (
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
 CREATE POLICY "Users can update their own profile"
   ON profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -35,13 +41,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- ─── Trips ────────────────────────────────────────────────────────────────────
 
-CREATE TABLE trips (
+CREATE TABLE IF NOT EXISTS trips (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL CHECK (length(name) BETWEEN 2 AND 200),
@@ -55,26 +62,30 @@ CREATE TABLE trips (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_trips_owner_id ON trips(owner_id);
-CREATE INDEX idx_trips_status ON trips(status);
+CREATE INDEX IF NOT EXISTS idx_trips_owner_id ON trips(owner_id);
+CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status);
 
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Owners can view their trips" ON trips;
 CREATE POLICY "Owners can view their trips"
   ON trips FOR SELECT USING (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Owners can create trips" ON trips;
 CREATE POLICY "Owners can create trips"
   ON trips FOR INSERT WITH CHECK (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Owners can update their trips" ON trips;
 CREATE POLICY "Owners can update their trips"
   ON trips FOR UPDATE USING (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Owners can delete their trips" ON trips;
 CREATE POLICY "Owners can delete their trips"
   ON trips FOR DELETE USING (auth.uid() = owner_id);
 
 -- ─── Trip Members ─────────────────────────────────────────────────────────────
 
-CREATE TABLE trip_members (
+CREATE TABLE IF NOT EXISTS trip_members (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 200),
@@ -84,30 +95,34 @@ CREATE TABLE trip_members (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_trip_members_trip_id ON trip_members(trip_id);
+CREATE INDEX IF NOT EXISTS idx_trip_members_trip_id ON trip_members(trip_id);
 
 ALTER TABLE trip_members ENABLE ROW LEVEL SECURITY;
 
 -- Only trip owners can view/manage members
+DROP POLICY IF EXISTS "Trip owners can view members" ON trip_members;
 CREATE POLICY "Trip owners can view members"
   ON trip_members FOR SELECT
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can insert members" ON trip_members;
 CREATE POLICY "Trip owners can insert members"
   ON trip_members FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can update members" ON trip_members;
 CREATE POLICY "Trip owners can update members"
   ON trip_members FOR UPDATE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can delete members" ON trip_members;
 CREATE POLICY "Trip owners can delete members"
   ON trip_members FOR DELETE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
 -- ─── Contributions ────────────────────────────────────────────────────────────
 
-CREATE TABLE contributions (
+CREATE TABLE IF NOT EXISTS contributions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   member_id UUID NOT NULL REFERENCES trip_members(id),
@@ -122,16 +137,18 @@ CREATE TABLE contributions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_contributions_trip_id ON contributions(trip_id);
-CREATE INDEX idx_contributions_member_id ON contributions(member_id);
-CREATE INDEX idx_contributions_status ON contributions(status);
+CREATE INDEX IF NOT EXISTS idx_contributions_trip_id ON contributions(trip_id);
+CREATE INDEX IF NOT EXISTS idx_contributions_member_id ON contributions(member_id);
+CREATE INDEX IF NOT EXISTS idx_contributions_status ON contributions(status);
 
 ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Trip owners can view contributions" ON contributions;
 CREATE POLICY "Trip owners can view contributions"
   ON contributions FOR SELECT
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can insert contributions" ON contributions;
 CREATE POLICY "Trip owners can insert contributions"
   ON contributions FOR INSERT
   WITH CHECK (
@@ -139,17 +156,19 @@ CREATE POLICY "Trip owners can insert contributions"
     AND auth.uid() = created_by
   );
 
+DROP POLICY IF EXISTS "Trip owners can update contributions (void only)" ON contributions;
 CREATE POLICY "Trip owners can update contributions (void only)"
   ON contributions FOR UPDATE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can delete contributions" ON contributions;
 CREATE POLICY "Trip owners can delete contributions"
   ON contributions FOR DELETE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
 -- ─── Expenses ─────────────────────────────────────────────────────────────────
 
-CREATE TABLE expenses (
+CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   title TEXT NOT NULL CHECK (length(title) BETWEEN 2 AND 300),
@@ -170,16 +189,18 @@ CREATE TABLE expenses (
   )
 );
 
-CREATE INDEX idx_expenses_trip_id ON expenses(trip_id);
-CREATE INDEX idx_expenses_status ON expenses(status);
-CREATE INDEX idx_expenses_category ON expenses(category);
+CREATE INDEX IF NOT EXISTS idx_expenses_trip_id ON expenses(trip_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Trip owners can view expenses" ON expenses;
 CREATE POLICY "Trip owners can view expenses"
   ON expenses FOR SELECT
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can insert expenses" ON expenses;
 CREATE POLICY "Trip owners can insert expenses"
   ON expenses FOR INSERT
   WITH CHECK (
@@ -187,17 +208,19 @@ CREATE POLICY "Trip owners can insert expenses"
     AND auth.uid() = created_by
   );
 
+DROP POLICY IF EXISTS "Trip owners can update expenses" ON expenses;
 CREATE POLICY "Trip owners can update expenses"
   ON expenses FOR UPDATE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can delete expenses" ON expenses;
 CREATE POLICY "Trip owners can delete expenses"
   ON expenses FOR DELETE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
 -- ─── Expense Allocations ──────────────────────────────────────────────────────
 
-CREATE TABLE expense_allocations (
+CREATE TABLE IF NOT EXISTS expense_allocations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   expense_id UUID NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
   member_id UUID NOT NULL REFERENCES trip_members(id),
@@ -206,11 +229,12 @@ CREATE TABLE expense_allocations (
   UNIQUE(expense_id, member_id)
 );
 
-CREATE INDEX idx_expense_allocations_expense_id ON expense_allocations(expense_id);
-CREATE INDEX idx_expense_allocations_member_id ON expense_allocations(member_id);
+CREATE INDEX IF NOT EXISTS idx_expense_allocations_expense_id ON expense_allocations(expense_id);
+CREATE INDEX IF NOT EXISTS idx_expense_allocations_member_id ON expense_allocations(member_id);
 
 ALTER TABLE expense_allocations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Trip owners can view allocations" ON expense_allocations;
 CREATE POLICY "Trip owners can view allocations"
   ON expense_allocations FOR SELECT
   USING (
@@ -221,6 +245,7 @@ CREATE POLICY "Trip owners can view allocations"
     )
   );
 
+DROP POLICY IF EXISTS "Trip owners can insert allocations" ON expense_allocations;
 CREATE POLICY "Trip owners can insert allocations"
   ON expense_allocations FOR INSERT
   WITH CHECK (
@@ -231,6 +256,7 @@ CREATE POLICY "Trip owners can insert allocations"
     )
   );
 
+DROP POLICY IF EXISTS "Trip owners can delete allocations" ON expense_allocations;
 CREATE POLICY "Trip owners can delete allocations"
   ON expense_allocations FOR DELETE
   USING (
@@ -243,7 +269,7 @@ CREATE POLICY "Trip owners can delete allocations"
 
 -- ─── Fund Transactions ────────────────────────────────────────────────────────
 
-CREATE TABLE fund_transactions (
+CREATE TABLE IF NOT EXISTS fund_transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   member_id UUID REFERENCES trip_members(id),
@@ -258,15 +284,17 @@ CREATE TABLE fund_transactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_fund_transactions_trip_id ON fund_transactions(trip_id);
-CREATE INDEX idx_fund_transactions_member_id ON fund_transactions(member_id);
+CREATE INDEX IF NOT EXISTS idx_fund_transactions_trip_id ON fund_transactions(trip_id);
+CREATE INDEX IF NOT EXISTS idx_fund_transactions_member_id ON fund_transactions(member_id);
 
 ALTER TABLE fund_transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Trip owners can view fund transactions" ON fund_transactions;
 CREATE POLICY "Trip owners can view fund transactions"
   ON fund_transactions FOR SELECT
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can insert fund transactions" ON fund_transactions;
 CREATE POLICY "Trip owners can insert fund transactions"
   ON fund_transactions FOR INSERT
   WITH CHECK (
@@ -274,17 +302,19 @@ CREATE POLICY "Trip owners can insert fund transactions"
     AND auth.uid() = created_by
   );
 
+DROP POLICY IF EXISTS "Trip owners can update fund transactions" ON fund_transactions;
 CREATE POLICY "Trip owners can update fund transactions"
   ON fund_transactions FOR UPDATE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can delete fund transactions" ON fund_transactions;
 CREATE POLICY "Trip owners can delete fund transactions"
   ON fund_transactions FOR DELETE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
 -- ─── Trip Share Links ─────────────────────────────────────────────────────────
 
-CREATE TABLE trip_share_links (
+CREATE TABLE IF NOT EXISTS trip_share_links (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   token_hash TEXT NOT NULL UNIQUE,  -- SHA-256 hash of the raw token
@@ -294,16 +324,18 @@ CREATE TABLE trip_share_links (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_trip_share_links_trip_id ON trip_share_links(trip_id);
-CREATE INDEX idx_trip_share_links_token_hash ON trip_share_links(token_hash);
+CREATE INDEX IF NOT EXISTS idx_trip_share_links_trip_id ON trip_share_links(trip_id);
+CREATE INDEX IF NOT EXISTS idx_trip_share_links_token_hash ON trip_share_links(token_hash);
 
 ALTER TABLE trip_share_links ENABLE ROW LEVEL SECURITY;
 
 -- Only trip owners can manage share links
+DROP POLICY IF EXISTS "Trip owners can view their share links" ON trip_share_links;
 CREATE POLICY "Trip owners can view their share links"
   ON trip_share_links FOR SELECT
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can create share links" ON trip_share_links;
 CREATE POLICY "Trip owners can create share links"
   ON trip_share_links FOR INSERT
   WITH CHECK (
@@ -311,10 +343,12 @@ CREATE POLICY "Trip owners can create share links"
     AND auth.uid() = created_by
   );
 
+DROP POLICY IF EXISTS "Trip owners can update (revoke) share links" ON trip_share_links;
 CREATE POLICY "Trip owners can update (revoke) share links"
   ON trip_share_links FOR UPDATE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Trip owners can delete share links" ON trip_share_links;
 CREATE POLICY "Trip owners can delete share links"
   ON trip_share_links FOR DELETE
   USING (EXISTS (SELECT 1 FROM trips WHERE id = trip_id AND owner_id = auth.uid()));
@@ -338,14 +372,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_trips_updated_at ON trips;
 CREATE TRIGGER set_trips_updated_at BEFORE UPDATE ON trips
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS set_trip_members_updated_at ON trip_members;
 CREATE TRIGGER set_trip_members_updated_at BEFORE UPDATE ON trip_members
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS set_contributions_updated_at ON contributions;
 CREATE TRIGGER set_contributions_updated_at BEFORE UPDATE ON contributions
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS set_expenses_updated_at ON expenses;
 CREATE TRIGGER set_expenses_updated_at BEFORE UPDATE ON expenses
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();

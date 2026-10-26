@@ -1,12 +1,31 @@
 -- ============================================================
 -- Migration: 003_manager_member_roles.sql
 -- Friends Trip Expense Manager — Manager / Group Member roles + join codes
--- ADDITIVE ONLY. Run this on the OLD project's Supabase database
--- (the one behind friends-trip-manager.vercel.app), in the SQL Editor,
+-- ADDITIVE ONLY. Run this in the project's Supabase SQL Editor,
 -- AFTER 001_initial_schema.sql and 002_allow_delete_trip.sql.
+-- ORDER NOTE (fixed): the trip_members user_id/role columns are added
+-- BEFORE the is_trip_member/is_trip_manager helpers below, because those
+-- helpers reference user_id and Postgres validates SQL functions at
+-- creation time (otherwise 42703: column "user_id" does not exist).
 -- It does NOT drop or recreate any table and does NOT rewrite 001/002.
 -- Existing trips keep working: every trip owner is linked as its Manager.
 -- ============================================================
+
+-- ─── trip_members: link rows to accounts + role ──────────────────────────
+-- (must come BEFORE the helpers: they reference trip_members.user_id)
+
+ALTER TABLE trip_members
+  ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'member'
+    CHECK (role IN ('manager', 'member'));
+
+CREATE INDEX IF NOT EXISTS idx_trip_members_user_id ON trip_members(user_id);
+
+-- One active linked row per user per trip (leaving sets status inactive,
+-- so a user who leaves and rejoins later gets a fresh row).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_trip_members_trip_user_active
+  ON trip_members(trip_id, user_id)
+  WHERE user_id IS NOT NULL AND status = 'active';
 
 -- ─── Helpers (SECURITY DEFINER so policies can call them without
 --     recursing into the same table's RLS) ────────────────────────────────
@@ -27,21 +46,6 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
                  WHERE trip_id = p_trip_id AND user_id = auth.uid()
                    AND status = 'active' AND role = 'manager');
 $$;
-
--- ─── trip_members: link rows to accounts + role ──────────────────────────
-
-ALTER TABLE trip_members
-  ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'member'
-    CHECK (role IN ('manager', 'member'));
-
-CREATE INDEX IF NOT EXISTS idx_trip_members_user_id ON trip_members(user_id);
-
--- One active linked row per user per trip (leaving sets status inactive,
--- so a user who leaves and rejoins later gets a fresh row).
-CREATE UNIQUE INDEX IF NOT EXISTS idx_trip_members_trip_user_active
-  ON trip_members(trip_id, user_id)
-  WHERE user_id IS NOT NULL AND status = 'active';
 
 -- Backfill: if a name-only row already matches the owner's profile name,
 -- link it instead of creating a duplicate row.

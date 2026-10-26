@@ -1,7 +1,19 @@
 -- ============================================================
 -- Migration: 002_allow_delete_trip.sql
 -- Enables permanent trip deletion with cascade and RLS policies
+-- IDEMPOTENT: the policies below are dropped (IF EXISTS) before being
+-- recreated, because 001 already creates the trips DELETE policy.
+-- Run in order: 001 -> 002 -> 003.
 -- ============================================================
+
+-- Drop first: 001 already created "Owners can delete their trips".
+DROP POLICY IF EXISTS "Owners can delete their trips" ON trips;
+DROP POLICY IF EXISTS "Trip owners can delete members" ON trip_members;
+DROP POLICY IF EXISTS "Trip owners can delete contributions" ON contributions;
+DROP POLICY IF EXISTS "Trip owners can delete expenses" ON expenses;
+DROP POLICY IF EXISTS "Trip owners can delete allocations" ON expense_allocations;
+DROP POLICY IF EXISTS "Trip owners can delete fund transactions" ON fund_transactions;
+DROP POLICY IF EXISTS "Trip owners can delete share links" ON trip_share_links;
 
 -- RLS Policies for DELETE
 CREATE POLICY "Owners can delete their trips"

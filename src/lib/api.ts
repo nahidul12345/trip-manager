@@ -68,6 +68,34 @@ export async function createTrip(form: CreateTripForm): Promise<Trip> {
 
   if (tripError) throw tripError;
 
+  // Link the creator as this trip's Manager row (migration 003 model).
+  // Previously new trips had NO linked row for the creator, so the
+  // Manager could not pick themselves in contribution/expense dropdowns
+  // and did not appear in the Members tab. Pre-003 databases have no
+  // user_id/role columns, so that insert is best-effort and ignored there
+  // (owner_id still makes the creator a Manager via RLS/helpers).
+  try {
+    const displayName =
+      (user.user_metadata as { display_name?: string } | null)?.display_name ||
+      user.email?.split('@')[0] ||
+      'Trip Manager';
+    const { error: managerRowError } = await supabase
+      .from('trip_members')
+      .insert({
+        trip_id: trip.id,
+        name: displayName,
+        notes: null,
+        user_id: user.id,
+        role: 'manager',
+        status: 'active',
+      });
+    if (managerRowError) throw managerRowError;
+  } catch (err) {
+    // Pre-003 schema (no user_id/role columns) or a duplicate linked row:
+    // the trip itself was created successfully, so do not fail creation.
+    console.warn('Creator Manager row not created (pre-003 database?):', err);
+  }
+
   // Create members
   if (form.members && form.members.length > 0) {
     const membersToInsert = form.members
@@ -248,7 +276,21 @@ export async function getOrCreateJoinCode(tripId: UUID): Promise<string | null> 
     .insert({ trip_id: tripId, code: generateJoinCode(), is_active: true, created_by: user.id })
     .select('code')
     .single();
-  if (error) throw error;
+  if (error) {
+    // Race: another Manager created the (single) active code first, or
+    // the generated code collided. The active-per-trip unique index
+    // rejects the second insert — just return the code that now exists.
+    const { data: retry, error: retryError } = await supabase
+      .from('trip_join_codes')
+      .select('code')
+      .eq('trip_id', tripId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (retryError || !retry) throw error;
+    return (retry as { code: string }).code;
+  }
   return (data as { code: string }).code;
 }
 
