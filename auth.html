@@ -12,15 +12,19 @@
 <script src="js/i18n.js"></script>
 </head>
 <body>
-<div class="wrap">
-<div class="card">
+<div class="hero">
+<div class="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div>
 <h1 data-i18n="app_title">Friends Trip Manager</h1>
+<p data-i18n="hero_subtitle">Manage your group trip finances</p>
+</div>
+<div class="wrap auth-wrap">
+<div class="card">
 <p class="muted" data-i18n="login_desc">লগইন করুন অথবা নতুন অ্যাকাউন্ট খুলুন। সাইনআপের পর Manager / Member বেছে নিতে হবে।</p>
 <label for="email" data-i18n="email_label">ইমেইল</label>
 <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
 <label for="password" data-i18n="password_label">পাসওয়ার্ড</label>
 <input id="password" type="password" placeholder="Minimum 6 characters / কমপক্ষে ৬ অক্ষর" autocomplete="current-password">
-<div class="row">
+<div class="row auth-row">
 <button id="loginBtn" data-i18n="login_btn">লগইন</button>
 <button id="signupBtn" class="secondary" data-i18n="signup_btn">সাইনআপ</button>
 </div>

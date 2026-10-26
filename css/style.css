@@ -1,27 +1,39 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #f1f5f9; color: #0f172a; }
-.topbar { background: #0f172a; color: #fff; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: linear-gradient(180deg, #12224a 0%, #0b1226 55%, #0f172a 100%); background-attachment: fixed; color: #0f172a; min-height: 100vh; }
+a { color: #2563eb; }
+.topbar { background: transparent; color: #fff; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,.12); }
 .topbar a { color: #fff; text-decoration: none; font-weight: 700; }
 .topbar button { background: #ef4444; color: #fff; border: 0; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 .wrap { max-width: 720px; margin: 24px auto; padding: 0 16px; }
-.card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 16px; }
+.wrap.auth-wrap { max-width: 520px; }
+.hero { text-align: center; padding: 40px 16px 8px; }
+.hero-icon { width: 84px; height: 84px; margin: 0 auto; background: #2563eb; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 32px rgba(37,99,235,.55); color: #fff; }
+.hero-icon svg { width: 44px; height: 44px; }
+.hero h1 { color: #fff; font-size: 32px; margin: 20px 0 8px; }
+.hero p { color: #cbd5e1; font-size: 17px; margin: 0; }
+.card { background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 12px 32px rgba(0,0,0,.35); margin-bottom: 16px; }
+.card h1 { font-size: 26px; margin: 0 0 8px; color: #0f172a; }
+.card h2 { font-size: 20px; margin: 0 0 12px; color: #0f172a; }
 h1 { font-size: 26px; margin: 0 0 8px; }
 h2 { font-size: 20px; margin: 0 0 12px; }
 p.muted { color: #64748b; }
-label { display: block; font-weight: 600; margin: 12px 0 4px; }
-input, select, textarea { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; }
-button, .btn { background: #0f172a; color: #fff; border: 0; padding: 11px 16px; border-radius: 10px; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 12px; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; color: #475569; }
+input, select, textarea { width: 100%; padding: 13px 14px; border: 1px solid #334155; border-radius: 12px; font-size: 16px; background: #1e293b; color: #fff; color-scheme: dark; }
+input::placeholder, textarea::placeholder { color: #94a3b8; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #2563eb; outline-offset: 0; }
+button, .btn { background: #2563eb; color: #fff; border: 0; padding: 13px 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 12px; }
 button.secondary, .btn.secondary { background: #e2e8f0; color: #0f172a; }
 button.danger { background: #dc2626; }
 button:disabled { opacity: .6; }
 .msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; }
-.msg.ok { background: #dcfce7; }
-.msg.error { background: #fee2e2; }
+.msg.ok { background: #dcfce7; color: #166534; }
+.msg.error { background: #fee2e2; color: #991b1b; }
 .badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
 .code { font-size: 28px; letter-spacing: 4px; font-weight: 800; background: #f8fafc; border: 1px dashed #94a3b8; padding: 12px; text-align: center; border-radius: 10px; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.auth-row button { flex: 1; }
 .list { list-style: none; padding: 0; margin: 0; }
 .list li { padding: 12px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .small { font-size: 13px; color: #64748b; }
-.lang-select { padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; background: #fff; margin-left: 10px; }
+.lang-select { padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; font-size: 14px; background: #1e293b; color: #fff; margin-left: 10px; width: auto; }
 .topbar .lang-select { margin-left: auto; }

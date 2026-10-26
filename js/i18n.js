@@ -7,6 +7,7 @@
 const I18N = {
   bn: {
     app_title: "Friends Trip Manager",
+    hero_subtitle: "তোমার গ্রুপ ট্রিপের খরচ ম্যানেজ করো",
     login_desc: "লগইন করুন অথবা নতুন অ্যাকাউন্ট খুলুন। সাইনআপের পর Manager / Member বেছে নিতে হবে।",
     email_label: "ইমেইল",
     password_label: "পাসওয়ার্ড",
@@ -57,6 +58,7 @@ const I18N = {
   },
   en: {
     app_title: "Friends Trip Manager",
+    hero_subtitle: "Manage your group trip finances",
     login_desc: "Log in or create a new account. After signup, choose Manager / Member.",
     email_label: "Email",
     password_label: "Password",
