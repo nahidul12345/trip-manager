@@ -1,16 +1,24 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-// NEW Supabase project only. Values come from .env — never hard-code a key here,
-// never a service_role key, never an account/database password.
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-export const isSupabaseConfigured =
-  !!SUPABASE_URL &&
-  !!SUPABASE_ANON_KEY &&
-  SUPABASE_ANON_KEY !== 'PASTE_YOUR_PUBLISHABLE_KEY_HERE' &&
-  !SUPABASE_ANON_KEY.startsWith('sb_secret_');
+const rawUrl = import.meta.env.VITE_SUPABASE_URL;
+const rawAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase: SupabaseClient = createClient(
-  SUPABASE_URL ?? 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY ?? 'placeholder',
+export const isSupabaseConfigured = Boolean(
+  rawUrl &&
+  rawAnonKey &&
+  !rawUrl.includes('your-project-ref') &&
+  !rawUrl.includes('placeholder')
 );
+
+const supabaseUrl = isSupabaseConfigured && rawUrl ? rawUrl : 'https://placeholder.supabase.co';
+const supabaseAnonKey = isSupabaseConfigured && rawAnonKey ? rawAnonKey : 'placeholder-anon-key';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
+
+export type SupabaseClient = typeof supabase;

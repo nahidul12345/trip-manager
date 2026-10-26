@@ -1,64 +1,184 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useLang } from '../contexts/LangContext';
-import { Layout } from '../components/Layout';
-import { Button, Card, Alert } from '../components/ui';
-import { supabase } from '../lib/supabase';
+import { Link } from 'react-router-dom';
+import {
+  Plus, MapPin, Wallet,
+  Users, Clock, ArrowRight, Archive, AlertCircle,
+} from 'lucide-react';
+import { AppLayout } from '../components/layout/AppLayout';
+import { StatCard, Card, Badge, Button, CardSkeleton, EmptyState } from '../components/ui/index';
+import { fetchTrips } from '../lib/api';
+import type { Trip } from '../types';
+import { format } from 'date-fns';
 
-type TripRow = { trip_id: string; role: string; trips: { id: string; name: string; location: string | null; status: string } | null };
+function TripStatusBadge({ status }: { status: Trip['status'] }) {
+  return (
+    <Badge variant={status === 'active' ? 'success' : 'neutral'}>
+      {status === 'active' ? 'Active' : 'Archived'}
+    </Badge>
+  );
+}
 
 export function DashboardPage() {
-  const { user, loading } = useAuth();
-  const { tr } = useLang();
-  const [trips, setTrips] = useState<TripRow[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('trip_members')
-      .select('trip_id, role, trips(id, name, location, status)')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .then(({ data, error: e }) => {
-        if (e) setError(e.message);
-        else setTrips((data ?? []) as unknown as TripRow[]);
-        setBusy(false);
-      });
-  }, [user]);
+    loadTrips();
+  }, []);
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  const loadTrips = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchTrips();
+      setTrips(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load trips');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeTrips = trips.filter(t => t.status === 'active');
+  const archivedTrips = trips.filter(t => t.status === 'archived');
 
   return (
-    <Layout>
-      <h1 className="text-2xl font-bold mb-4">{tr('dashboard')}</h1>
-      {error && <div className="mb-4"><Alert variant="danger">{error}</Alert></div>}
-      <div className="flex gap-3 flex-wrap mb-6 no-print">
-        <Link to="/trips/new"><Button>{tr('createTrip')}</Button></Link>
-        <Link to="/trips/join"><Button variant="secondary">{tr('joinTrip')}</Button></Link>
-        <Link to="/role"><Button variant="secondary">Change Role</Button></Link>
-      </div>
-      <h2 className="text-lg font-semibold mb-3">{tr('myTrips')}</h2>
-      {busy && <p className="text-slate-500">{tr('loading')}</p>}
-      {!busy && trips.length === 0 && <Card><p className="text-slate-600">No trips yet. Create one as a Manager, or join one with a Join Code.</p></Card>}
-      <div className="grid gap-4">
-        {trips.filter((t) => t.trips).map((t) => (
-          <Link key={t.trip_id} to={`/trips/${t.trip_id}`} className="no-underline text-slate-900">
-            <Card>
-              <div className="flex justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{t.trips!.name}</h3>
-                  {t.trips!.location && <p className="text-slate-500 text-sm">{t.trips!.location}</p>}
-                </div>
-                <span className="text-xs font-bold bg-blue-100 text-blue-700 rounded-full px-2 py-1 h-fit">{t.role} · {t.trips!.status}</span>
-              </div>
-            </Card>
+    <AppLayout>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage your group trip expenses</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Link to="/trips/join">
+            <Button variant="secondary" size="lg">
+              Join with Code
+            </Button>
           </Link>
-        ))}
+          <Link to="/trips/new">
+            <Button variant="primary" leftIcon={<Plus size={16} />} size="lg">
+              New Trip
+            </Button>
+          </Link>
+        </div>
       </div>
-    </Layout>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatCard
+          label="Active Trips"
+          value={loading ? '—' : String(activeTrips.length)}
+          icon={<MapPin size={18} />}
+        />
+        <StatCard
+          label="Total Trips"
+          value={loading ? '—' : String(trips.length)}
+          icon={<Wallet size={18} />}
+        />
+        <StatCard
+          label="Members Tracked"
+          value="—"
+          icon={<Users size={18} />}
+        />
+        <StatCard
+          label="Last Updated"
+          value={trips.length > 0 ? format(new Date(trips[0].updated_at), 'MMM d') : '—'}
+          icon={<Clock size={18} />}
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-6">
+          <AlertCircle size={16} className="flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Active Trips */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">Active Trips</h2>
+          <Link to="/trips" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
+            View all <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => <CardSkeleton key={i} />)}
+          </div>
+        ) : activeTrips.length === 0 ? (
+          <EmptyState
+            icon={<MapPin size={24} />}
+            title="No active trips"
+            description="Create your first trip to start tracking expenses"
+            action={
+              <Link to="/trips/new">
+                <Button variant="primary" leftIcon={<Plus size={15} />}>
+                  Create Trip
+                </Button>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {activeTrips.map(trip => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Archived Trips */}
+      {archivedTrips.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Archive size={16} className="text-slate-400 dark:text-slate-500" />
+            <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Archived Trips</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {archivedTrips.map(trip => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+        </div>
+      )}
+    </AppLayout>
+  );
+}
+
+function TripCard({ trip }: { trip: Trip }) {
+  return (
+    <Link to={`/trips/${trip.id}`}>
+      <Card className="hover:border-blue-200 dark:hover:border-blue-700 transition-colors group">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {trip.name}
+            </h3>
+            {trip.location && (
+              <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+                <MapPin size={11} />
+                {trip.location}
+              </div>
+            )}
+          </div>
+          <TripStatusBadge status={trip.status} />
+        </div>
+
+        {trip.description && (
+          <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mb-3">{trip.description}</p>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1">
+            <Clock size={11} />
+            {format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}
+          </div>
+          <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:underline">View →</span>
+        </div>
+      </Card>
+    </Link>
   );
 }
