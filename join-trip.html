@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join Trip - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+<div class="topbar"><a href="dashboard.html">Friends Trip Manager</a><button onclick="logout()">Logout / লগআউট</button></div>
+<div class="wrap">
+<div class="card">
+<h1 data-i18n="join_trip_title">ট্রিপে জয়েন করুন</h1>
+<p class="muted">Manager-এর দেওয়া Join Code দিন। কোড ঠিক হলে ওই ট্রিপে Group Member হিসেবে জয়েন হবেন।<br><span class="small">Enter the Join Code given by the Manager. If the code is correct, you will join that trip as a Group Member.</span></p>
+<label for="code" data-i18n="join_code_label">জয়েন কোড</label>
+<input id="code" placeholder="Example: A7K9P2" style="text-transform: uppercase;">
+<button id="joinBtn" data-i18n="join_btn">জয়েন করুন</button>
+<div id="msg"></div>
+<p><a href="dashboard.html">Back to Dashboard / ড্যাশবোর্ডে ফিরুন</a></p>
+</div>
+</div>
+<script src="js/join-trip.js"></script>
+</body>
+</html>

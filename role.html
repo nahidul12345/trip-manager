@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Role - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+<div class="topbar"><a href="dashboard.html">Friends Trip Manager</a><button onclick="logout()">Logout / লগআউট</button></div>
+<div class="wrap">
+<div class="card">
+<h1 data-i18n="role_title">আপনি কী হিসেবে শুরু করতে চান?</h1>
+<p class="muted" id="userLine"></p>
+</div>
+<div class="card">
+<h2 data-i18n="manager_title">ম্যানেজার</h2>
+<p>ট্রিপ বানাবেন, মেম্বার যোগ/রিমুভ করবেন, সব contribution/expense ম্যানেজ করবেন।<br><span class="small">Create trips, add/remove members, manage all contributions and expenses.</span></p>
+<button id="managerBtn" data-i18n="manager_btn">আমি Manager</button>
+</div>
+<div class="card">
+<h2 data-i18n="member_title">গ্রুপ মেম্বার</h2>
+<p>Manager-এর দেওয়া Join Code দিয়ে কোনো ট্রিপে জয়েন করবেন। শুধু ওই ট্রিপটাই দেখতে পারবেন।<br><span class="small">Join a trip with the Manager's Join Code. You will only see that trip.</span></p>
+<button id="memberBtn" class="secondary" data-i18n="member_btn">আমি Group Member</button>
+</div>
+<div id="msg"></div>
+<p class="small">নোট: রোলটা শুরু করার জন্য। পরে আলাদা করে নতুন ট্রিপ নিজে Manager হিসেবে বানাতে পারবেন, আর ট্রিপ-ভিত্তিক রোল আলাদা হবে।<br>Note: This is your starting role. Later you can separately create your own trip as a Manager, and roles are per trip.</p>
+</div>
+<script src="js/role.js"></script>
+</body>
+</html>

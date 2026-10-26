@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/calculations.js"></script>
+</head>
+<body>
+<div class="topbar"><a href="dashboard.html">Friends Trip Manager</a><button onclick="logout()">Logout / লগআউট</button></div>
+<div class="wrap">
+<div class="card">
+<h1 id="tripName">লোড হচ্ছে... / Loading...</h1>
+<p class="muted" id="tripMeta"></p>
+<p>আমার রোল / My role: <span class="badge" id="myRole"></span></p>
+</div>
+
+<div class="card" id="codeCard" style="display:none;">
+<h2>Join Code (Manager only) / জয়েন কোড (শুধু Manager-এর জন্য)</h2>
+<p class="muted">এই কোডটা মেম্বারদের দিন, তারা Join Trip পেজে এই কোড দিয়ে জয়েন করবে।<br><span class="small">Give this code to members. They will join from the Join Trip page with this code.</span></p>
+<div class="code" id="joinCode">-</div>
+</div>
+
+<div class="card">
+<h2 data-i18n="members_title">মেম্বাররা</h2>
+<ul class="list" id="memberList"><li>লোড হচ্ছে... / Loading...</li></ul>
+<div id="msg"></div>
+</div>
+
+<div class="card">
+<h2 data-i18n="contrib_title">Contribution যোগ করুন (টাকা জমা)</h2>
+<form id="contribForm">
+<label for="contribMember">কে দিলো? / Who paid?</label>
+<select id="contribMember"></select>
+<label for="contribAmount">Amount (টাকা) / Amount (Taka)</label>
+<input id="contribAmount" type="number" min="1" placeholder="1000">
+<label for="contribMethod">Payment Method / পেমেন্ট মাধ্যম</label>
+<select id="contribMethod"><option value="cash">cash</option><option value="bkash">bkash</option><option value="nagad">nagad</option><option value="bank">bank</option><option value="other">other</option></select>
+<label for="contribDate">Date / তারিখ</label>
+<input id="contribDate" type="date">
+<label for="contribNote">Note / নোট</label>
+<input id="contribNote" placeholder="Optional / ঐচ্ছিক">
+<label for="contribRef">Reference / রেফারেন্স</label>
+<input id="contribRef" placeholder="Optional, e.g. bKash TrxID / ঐচ্ছিক">
+<button type="submit">Add Contribution / জমা যোগ করুন</button>
+<div id="contribMsg"></div>
+</form>
+<h3 style="margin-top:20px;">Contributions / জমাগুলো</h3>
+<ul class="list" id="contribList"><li>লোড হচ্ছে... / Loading...</li></ul>
+</div>
+
+<div class="card">
+<h2 data-i18n="expense_title">Expense যোগ করুন</h2>
+<form id="expenseForm">
+<label for="expenseTitle">Title * / শিরোনাম *</label>
+<input id="expenseTitle" placeholder="Lunch, Bus ticket..." required>
+<label for="expenseCategory">Category / ক্যাটাগরি</label>
+<select id="expenseCategory"><option value="transport">transport</option><option value="food">food</option><option value="tickets">tickets</option><option value="accommodation">accommodation</option><option value="shopping">shopping</option><option value="other">other</option></select>
+<label for="expenseAmount">Amount (টাকা) * / Amount (Taka) *</label>
+<input id="expenseAmount" type="number" min="1" required>
+<label for="expenseSource">Payment Source / টাকার উৎস</label>
+<select id="expenseSource"><option value="group_fund">group_fund - গ্রুপ ফান্ড থেকে / From group fund</option><option value="personal">personal - একজন নিজে দিলো / One person paid personally</option></select>
+<div id="payerRow" style="display:none;">
+<label for="expensePayer">কে দিলো? (personal হলে) / Who paid? (if personal)</label>
+<select id="expensePayer"></select>
+</div>
+<label for="expenseDate">Date / তারিখ</label>
+<input id="expenseDate" type="date">
+<label for="expenseDesc">Description / বিবরণ</label>
+<input id="expenseDesc" placeholder="Optional / ঐচ্ছিক">
+<label for="splitMethod">Split Method / ভাগের নিয়ম</label>
+<select id="splitMethod"><option value="equal">equal - সমান ভাগ / Equal split</option><option value="custom_amount">custom_amount - নিজের মতো টাকা / Custom amount</option><option value="custom_percentage">custom_percentage - শতাংশ / Percentage</option></select>
+<div id="splitMembers" style="margin-top:10px;"></div>
+<button type="submit">Add Expense / খরচ যোগ করুন</button>
+<div id="expenseMsg"></div>
+</form>
+<h3 style="margin-top:20px;">Expenses / খরচগুলো</h3>
+<ul class="list" id="expenseList"><li>লোড হচ্ছে... / Loading...</li></ul>
+</div>
+
+<div class="card">
+<h2 data-i18n="balance_title">ব্যালান্স</h2>
+<div id="balanceList">লোড হচ্ছে... / Loading...</div>
+<h3>Settlement - কে কাকে কত দেবে / Who pays whom</h3>
+<ul class="list" id="settlementList"><li>লোড হচ্ছে... / Loading...</li></ul>
+<button id="csvBtn" class="secondary">CSV Report Download / CSV রিপোর্ট ডাউনলোড</button>
+</div>
+
+<div class="card" id="shareCard">
+<h2 data-i18n="share_title">শেয়ার লিংক (শুধু Manager)</h2>
+<p class="muted">লগইন ছাড়া শুধু দেখার জন্য লিংক বানানো যাবে। লিংক ৩০ দিন পর expire হবে।<br><span class="small">Create a read-only link without login. The link expires after 30 days.</span></p>
+<button id="shareBtn">Share Link বানান / Create Share Link</button>
+<div id="shareLink"></div>
+<div id="shareMsg"></div>
+</div>
+
+<div class="card">
+<h2 data-i18n="actions_title">কাজ</h2>
+<div class="row">
+<button id="leaveBtn" class="danger" data-i18n="leave_btn">গ্রুপ থেকে বের হয়ে যান</button>
+<button id="archiveBtn" class="secondary" data-i18n="archive_btn">ট্রিপ আর্কাইভ করুন (শুধু Manager)</button>
+</div>
+<p class="small">নোট: Manager চেঞ্জ: কোনো Member-এর পাশে "Make Manager" ক্লিক করলে সে Manager হবে, আর পুরনো Manager তখন Group Member হয়ে যাবে। Manager-এর অপশনগুলো তখন তার কাছে আর দেখাবে না। একমাত্র Manager থাকলে, আগে কাউকে Manager বানাতে হবে, তারপর সে Member হয়ে বের হতে পারবে।<br>Note: To change Manager, click "Make Manager" beside a Member. The old Manager then becomes a Group Member and will no longer see Manager options. If there is only one Manager, promote someone first, then the old Manager can leave as a Member.</p>
+<p><a href="dashboard.html">Back to Dashboard / ড্যাশবোর্ডে ফিরুন</a></p>
+</div>
+</div>
+<script src="js/trip.js"></script>
+<script src="js/contributions.js"></script>
+<script src="js/expenses.js"></script>
+<script src="js/balances.js"></script>
+<script src="js/share.js"></script>
+</body>
+</html>

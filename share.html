@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shared Trip - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/calculations.js"></script>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1 id="tripName">Shared Trip / শেয়ার করা ট্রিপ</h1>
+<p class="muted">শুধু দেখার জন্য (Read-only)। এখানে কিছু পরিবর্তন করা যাবে না, শুধু দেখা যাবে।<br><span class="small">Read-only view. Nothing can be changed here, only viewed.</span></p>
+<div id="msg"></div>
+</div>
+<div class="card" id="detailCard" style="display:none;">
+<h2>Balance / ব্যালান্স</h2>
+<div id="balanceList"></div>
+<h3>Settlement / হিসাব মেলানো</h3>
+<ul class="list" id="settlementList"></ul>
+<h3>Contributions / জমা</h3>
+<ul class="list" id="contribList"></ul>
+<h3>Expenses / খরচ</h3>
+<ul class="list" id="expenseList"></ul>
+</div>
+</div>
+<script src="js/share-view.js"></script>
+</body>
+</html>

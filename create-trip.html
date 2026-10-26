@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Trip - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+<div class="topbar"><a href="dashboard.html">Friends Trip Manager</a><button onclick="logout()">Logout / লগআউট</button></div>
+<div class="wrap">
+<div class="card">
+<h1 data-i18n="create_trip_title">ট্রিপ বানান</h1>
+<p class="muted">ট্রিপ বানানোর সময় Join Code দেখানো হবে না। ট্রিপ বানানোর পর ট্রিপ পেজে ঢুকলে Manager Join Code দেখতে পাবেন, আর সেই কোড দিয়ে মেম্বার জয়েন করবে।<br><span class="small">The Join Code is not shown at creation time. After creating the trip, the Manager will see it on the trip page, and members will join with that code.</span></p>
+<label for="name" data-i18n="trip_name_label">ট্রিপের নাম *</label>
+<input id="name" placeholder="Cox's Bazar Trip">
+<label for="location" data-i18n="location_label">জায়গা</label>
+<input id="location" placeholder="Cox's Bazar">
+<label for="start" data-i18n="start_label">শুরুর তারিখ</label>
+<input id="start" type="date">
+<label for="end" data-i18n="end_label">শেষের তারিখ</label>
+<input id="end" type="date">
+<label for="currency" data-i18n="currency_label">মুদ্রা</label>
+<input id="currency" value="BDT">
+<button id="createBtn" data-i18n="create_btn">ট্রিপ বানান</button>
+<div id="msg"></div>
+<p><a href="dashboard.html">Back to Dashboard / ড্যাশবোর্ডে ফিরুন</a></p>
+</div>
+</div>
+<script src="js/create-trip.js"></script>
+</body>
+</html>

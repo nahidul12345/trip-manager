@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Friends Trip Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/common.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+<div class="topbar"><a href="dashboard.html">Friends Trip Manager</a><button onclick="logout()">Logout / লগআউট</button></div>
+<div class="wrap">
+<div class="card">
+<h1 data-i18n="dashboard_title">ড্যাশবোর্ড</h1>
+<p class="muted" id="userLine"></p>
+<p><span class="badge" id="roleBadge"></span></p>
+<div class="row">
+<a class="btn" href="create-trip.html" data-i18n="create_trip_btn">ট্রিপ বানান (Manager)</a>
+<a class="btn secondary" href="join-trip.html" data-i18n="join_trip_btn">ট্রিপে জয়েন করুন (Member)</a>
+<a class="btn secondary" href="role.html" data-i18n="role_change_btn">রোল পরিবর্তন করুন</a>
+</div>
+</div>
+<div class="card">
+<h2 data-i18n="my_trips">আমার ট্রিপগুলো</h2>
+<ul class="list" id="tripList"><li>লোড হচ্ছে... / Loading...</li></ul>
+<div id="msg"></div>
+</div>
+</div>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
