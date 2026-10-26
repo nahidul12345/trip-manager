@@ -3,4 +3,4 @@
 // here on purpose - paste your own publishable key below before you run
 // the app. Never put a service_role key in any frontend file.
 const SUPABASE_URL = "https://rnsxesihyetlspicrwlo.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mpvCFNi7TCCYhb2ED5Bvnw_3l9VIYgl";
